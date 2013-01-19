@@ -91,7 +91,8 @@ class Test_freeform_values_ext extends Testee_unit_test_case {
 
   public function test__on_freeform_module_pre_form_parse__retrieves_row_id_from_flashdata_and_post_data_from_database()
   {
-    $row_id = 123;
+    $row_id   = 123;
+    $freeform = (object) array('variables' => array());
 
     $this->EE->session->expectOnce('flashdata',
       array('freeform_values_flashdata_id'));
@@ -101,8 +102,22 @@ class Test_freeform_values_ext extends Testee_unit_test_case {
     $this->_model->expectOnce('get_and_delete_flashdata', array($row_id));
     $this->_model->returns('get_and_delete_flashdata', array());
   
-    $this->_subject->on_freeform_module_pre_form_parse('tagdata', new StdClass);
+    $this->_subject->on_freeform_module_pre_form_parse('tagdata', $freeform);
   }
+
+
+  public function test__on_freeform_module_pre_form_parse__returns_tagdata()
+  {
+    $tagdata  = 'Lorem ipsum dolor';
+    $freeform = (object) array('variables' => array());
+
+    $this->EE->session->returns('flashdata', 1);
+    $this->_model->returns('get_and_delete_flashdata', array());
+  
+    $this->assertIdentical($tagdata,
+      $this->_subject->on_freeform_module_pre_form_parse($tagdata, $freeform));
+  }
+  
 
 
   public function test__on_freeform_module_pre_form_parse__adds_value_properties_to_freeform_object()

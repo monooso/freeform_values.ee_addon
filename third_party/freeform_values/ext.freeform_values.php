@@ -125,12 +125,6 @@ class Freeform_values_ext {
     $post_data = $this->_model->get_and_delete_flashdata(
       $this->EE->session->flashdata('freeform_values_flashdata_id'));
 
-    // If there is no POST data, we're done.
-    if ( ! $post_data)
-    {
-      return $tagdata;
-    }
-
     // Retrieve the field names. Every field has a label, so we look for that.
     $pattern = 'freeform:label:';
     $pattern_length = strlen($pattern);
