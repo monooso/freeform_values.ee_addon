@@ -74,6 +74,63 @@ class Test_freeform_values_ext extends Testee_unit_test_case {
   }
 
 
+  public function test__on_freeform_module_insert_end__deletes_flashdata_from_database()
+  {
+    $row_id = 123;
+
+    $this->EE->session->expectOnce('flashdata',
+      array('freeform_values_flashdata_id'));
+
+    $this->EE->session->returns('flashdata', $row_id);
+
+    $this->_model->expectOnce('delete_flashdata', array($row_id));
+  
+    $this->_subject->on_freeform_module_insert_end(array(), 1, 1, new StdClass);
+  }
+
+
+  public function test__on_freeform_module_pre_form_parse__retrieves_row_id_from_flashdata_and_post_data_from_database()
+  {
+    $row_id = 123;
+
+    $this->EE->session->expectOnce('flashdata',
+      array('freeform_values_flashdata_id'));
+
+    $this->EE->session->returns('flashdata', $row_id);
+
+    $this->_model->expectOnce('get_and_delete_flashdata', array($row_id));
+    $this->_model->returns('get_and_delete_flashdata', array());
+  
+    $this->_subject->on_freeform_module_pre_form_parse('tagdata', new StdClass);
+  }
+
+
+  public function test__on_freeform_module_pre_form_parse__adds_value_properties_to_freeform_object()
+  {
+    $row_id    = 123;
+    $post_data = array('first_name' => 'Morgan', 'last_name' => 'Freeman');
+
+    // Retrieve the previously POSTed data.
+    $this->EE->session->returns('flashdata', $row_id);
+    $this->_model->returns('get_and_delete_flashdata', $post_data);
+
+    // Create the dummy Freeform class. The variables array will be altered 
+    // directly on this object.
+    $freeform = (object) array(
+      'variables' => array(
+        'freeform:label:first_name' => 'First Name',
+        'freeform:label:last_name'  => 'Last Name'
+      )
+    );
+  
+    $this->_subject->on_freeform_module_pre_form_parse('tagdata', $freeform);
+
+    $this->assertIdentical($freeform->variables['freeform:value:first_name'], 'Morgan');
+    $this->assertIdentical($freeform->variables['freeform:value:last_name'], 'Freeman');
+  }
+  
+
+
   public function test__on_freeform_module_validate_end__saves_post_data()
   {
     $fv_post_data = array(

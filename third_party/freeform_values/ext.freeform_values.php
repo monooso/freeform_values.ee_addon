@@ -87,6 +87,26 @@ class Freeform_values_ext {
 
 
   /**
+   * Handles the freeform_module_insert_end extension hook. Deletes the 
+   * 'flashdata' row from the database, as it's no longer required.
+   *
+   * @access  public
+   * @param   array   $field_data   The field data.
+   * @param   int     $entry_id     The entry ID.
+   * @param   int     $form_id      The form ID.
+   * @param   object  $freeform     The Freeform instance.
+   * @return  void
+   */
+  public function on_freeform_module_insert_end(Array $field_data, $entry_id,
+    $form_id, $freeform
+  )
+  {
+    $this->_model->delete_flashdata(
+      $this->EE->session->flashdata('freeform_values_flashdata_id'));
+  }
+
+
+  /**
    * Handles the freeform_module_pre_form_parse extension hook.
    *
    * @access  public
@@ -94,15 +114,22 @@ class Freeform_values_ext {
    * @param   object  $freeform   The Freeform instance.
    * @return  string
    */
-  public function on_freeform_module_pre_form_parse($tagdata, &$freeform)
+  public function on_freeform_module_pre_form_parse($tagdata, $freeform)
   {
     if (($last_call = $this->EE->extensions->last_call) !== FALSE)
     {
       $tagdata = $last_call;
     }
 
-    // Retrieve the form values from the flashdata.
-    $post_values = $this->EE->session->flashdata('freeform_values') ?: array();
+    // Retrieve the previous POST data.
+    $post_data = $this->_model->get_and_delete_flashdata(
+      $this->EE->session->flashdata('freeform_values_flashdata_id'));
+
+    // If there is no POST data, we're done.
+    if ( ! $post_data)
+    {
+      return $tagdata;
+    }
 
     // Retrieve the field names. Every field has a label, so we look for that.
     $pattern = 'freeform:label:';
@@ -118,8 +145,8 @@ class Freeform_values_ext {
       $field_name = substr($key, $pattern_length);
 
       $freeform->variables['freeform:value:' .$field_name]
-        = array_key_exists($field_name, $post_values)
-          ? $post_values[$field_name] : '';
+        = array_key_exists($field_name, $post_data)
+          ? $post_data[$field_name] : '';
     }
 
     return $tagdata;
