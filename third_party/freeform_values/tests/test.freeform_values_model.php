@@ -113,6 +113,57 @@ class Test_freeform_values_model extends Testee_unit_test_case {
   /* --------------------------------------------------------------
    * EXTENSION TESTS
    * ------------------------------------------------------------ */
+
+  public function test__get_flashdata__retrieves_flashdata_from_the_database_given_a_valid_id()
+  {
+    $post_data = array(
+      'heisenberg'    => 'Walter White',
+      'capn-cook'     => 'Jesse Pinkman',
+      'generalissimo' => 'Gustavo Fring'
+    );
+
+    $db_result = $this->_get_mock('db_query');
+    $db_row    = array('post_data' => json_encode($post_data));
+    $row_id    = 123;
+
+    $this->EE->db->expectOnce('select', array('post_data'));
+
+    $this->EE->db->expectOnce('get_where', array(
+      array('fv_id' => $row_id), 1));
+
+    $this->EE->db->returns('get_where', $db_result);
+
+    $db_result->expectOnce('row_array');
+    $db_result->returns('row_array', $db_row);
+  
+    // Run the tests.
+    $this->assertIdentical($post_data, $this->_subject->get_flashdata($row_id));
+  }
+
+
+  public function test__get_flashdata__returns_empty_array_if_passed_an_invalid_id()
+  {
+    $this->assertIdentical(array(), $this->_subject->get_flashdata(NULL));
+    $this->assertIdentical(array(), $this->_subject->get_flashdata(array()));
+    $this->assertIdentical(array(), $this->_subject->get_flashdata(new StdClass));
+    $this->assertIdentical(array(), $this->_subject->get_flashdata('Wibble'));
+    $this->assertIdentical(array(), $this->_subject->get_flashdata(-123));
+    $this->assertIdentical(array(), $this->_subject->get_flashdata(0));
+  }
+
+
+  public function test__get_flashdata__returns_empty_array_if_row_not_found()
+  {
+    $row_id    = 123;
+    $db_result = $this->_get_mock('db_query');
+    
+    $this->EE->db->returns('get_where', $db_result);
+    $db_result->returns('row_array', array());
+  
+    // Run the tests.
+    $this->assertIdentical(array(), $this->_subject->get_flashdata($row_id));
+  }
+  
   
   public function test__install_extension__installs_extension_hooks()
   {
@@ -189,6 +240,33 @@ class Test_freeform_values_model extends Testee_unit_test_case {
 
     $this->_subject->install_extension($version, $hooks);
   }
+
+
+  public function test__save_flashdata__converts_array_to_json()
+  {
+    $data = array(
+      'location' => 'Barstow',
+      'region'   => 'Edge of the desert',
+      'event'    => 'Drugs began to take hold'
+    );
+
+    $insert_data = array(
+      'timestamp' => time(),
+      'post_data' => json_encode($data)
+    );
+
+    $row_id = 911;
+
+    $this->EE->db->expectOnce('insert',
+      array('freeform_values_flashdata', $insert_data));
+
+    $this->EE->db->expectOnce('insert_id');
+    $this->EE->db->returns('insert_id', $row_id);
+  
+    // Run the tests.
+    $this->assertIdentical($row_id, $this->_subject->save_flashdata($data));
+  }
+  
 
 
   public function test__uninstall_extension__deletes_extension_from_database()

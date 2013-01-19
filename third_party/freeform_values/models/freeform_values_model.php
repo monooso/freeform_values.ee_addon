@@ -42,6 +42,9 @@ class Freeform_values_model extends CI_Model {
 
     $this->EE =& get_instance();
 
+    // Load the number helper.
+    $this->EE->load->helper('EI_number_helper');
+
     // Load the OmniLogger class.
     if (file_exists(PATH_THIRD .'omnilog/classes/omnilogger.php'))
     {
@@ -251,7 +254,44 @@ class Freeform_values_model extends CI_Model {
   /* --------------------------------------------------------------
    * PUBLIC EXTENSION METHODS
    * ------------------------------------------------------------ */
-  
+
+  /**
+   * Deletes the 'flashdata' with the given ID.
+   *
+   * @access  public
+   * @param   int|string    $id     The row ID.
+   * @return  bool
+   */
+  public function delete_flashdata($id)
+  {
+    
+  }
+
+
+  /**
+   * Retrieves the 'flashdata' with the given ID.
+   *
+   * @access  public
+   * @param   int|string    $id     The row ID.
+   * @return  array
+   */
+  public function get_flashdata($id)
+  {
+    if ( ! valid_int($id, 1))
+    {
+      return array();
+    }
+
+    $db_result = $this->EE->db
+      ->select('post_data')
+      ->get_where(array('fv_id' => $id), 1);
+
+    return ($db_row = $db_result->row_array())
+      ? json_decode($db_row['post_data'], TRUE)
+      : array();
+  }
+
+
   /**
    * Returns the correctly-capitalised 'extension' class.
    *
@@ -327,6 +367,30 @@ class Freeform_values_model extends CI_Model {
     $this->EE->dbforge->add_field($fields);
     $this->EE->dbforge->add_key('fv_id', TRUE);
     $this->EE->dbforge->create_table('freeform_values_flashdata', TRUE);
+  }
+
+
+  /**
+   * Saves the given 'flashdata' to the database, and returns the row ID.
+   *
+   * @access  public
+   * @param   array   $data  The 'flashdata'.
+   * @return  int
+   */
+  public function save_flashdata(Array $data)
+  {
+    $insert_data = array(
+      'timestamp' => time(),
+      'post_data' => json_encode($data)
+    );
+
+    /**
+     * We assume the insert works. Not the end of the world if it doesn't, and 
+     * we have no fallback position anyway.
+     */
+
+    $this->EE->db->insert('freeform_values_flashdata', $insert_data);
+    return $this->EE->db->insert_id();
   }
 
 
