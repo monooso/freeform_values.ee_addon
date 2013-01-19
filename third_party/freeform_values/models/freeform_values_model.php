@@ -275,7 +275,26 @@ class Freeform_values_model extends CI_Model {
 
 
   /**
-   * Retrieves the 'flashdata' with the given ID.
+   * Convenience method to retrieve the 'flashdata' with the given ID, and 
+   * delete the row.
+   *
+   * @access  public
+   * @param   int|string    $id     The row ID.
+   * @return  array
+   */
+  public function get_and_delete_flashdata($id)
+  {
+    $data = $this->get_flashdata($id);
+
+    $this->delete_flashdata($id);
+
+    return $data;
+  }
+
+
+  /**
+   * Retrieves the 'flashdata' with the given ID. Currently makes no distinction 
+   * between a non-existent row and empty post data.
    *
    * @access  public
    * @param   int|string    $id     The row ID.

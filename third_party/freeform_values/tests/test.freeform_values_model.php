@@ -165,8 +165,11 @@ class Test_freeform_values_model extends Testee_unit_test_case {
   }
 
 
-  public function test__get_flashdata__returns_empty_array_if_passed_an_invalid_id()
+  public function test__get_flashdata__does_nothing_and_returns_false_if_passed_an_invalid_id()
   {
+    $this->EE->db->expectNever('select');
+    $this->EE->db->expectNever('get_where');
+
     $this->assertIdentical(array(), $this->_subject->get_flashdata(NULL));
     $this->assertIdentical(array(), $this->_subject->get_flashdata(array()));
     $this->assertIdentical(array(), $this->_subject->get_flashdata(new StdClass));
