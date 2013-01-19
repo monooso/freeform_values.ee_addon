@@ -292,6 +292,7 @@ class Freeform_values_model extends CI_Model {
       'version'   => $version
     );
 
+    // Register the hooks.
     foreach ($hooks AS $hook)
     {
       if ( ! is_string($hook) OR $hook == '')
@@ -302,6 +303,30 @@ class Freeform_values_model extends CI_Model {
       $this->EE->db->insert('extensions', array_merge(
         $default_hook_data, array('hook' => $hook, 'method' => 'on_' .$hook)));
     }
+
+    // Create the database table.
+    $this->EE->load->dbforge();
+
+    $fields = array(
+      'fv_id' => array(
+        'auto_increment' => TRUE,
+        'constraint'     => 10,
+        'type'           => 'INT',
+        'unsigned'       => TRUE
+      ),
+      'timestamp' => array(
+        'constraint' => 10,
+        'type'       => 'INT',
+        'unsigned'   => TRUE
+      ),
+      'post_data' => array(
+        'type' => 'TEXT'
+      )
+    );
+
+    $this->EE->dbforge->add_field($fields);
+    $this->EE->dbforge->add_key('fv_id', TRUE);
+    $this->EE->dbforge->create_table('freeform_values_flashdata', TRUE);
   }
 
 
@@ -313,14 +338,12 @@ class Freeform_values_model extends CI_Model {
    */
   public function uninstall_extension()
   {
+    // Delete the hooks.
     $this->EE->db->delete('extensions',
       array('class' => $this->get_sanitized_extension_class()));
-  }
 
-  
-  /* --------------------------------------------------------------
-   * PUBLIC ADD-ON SPECIFIC METHODS
-   * ------------------------------------------------------------ */
+    // Drop the database table.
+  }
 
 
 

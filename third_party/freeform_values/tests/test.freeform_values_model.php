@@ -160,6 +160,37 @@ class Test_freeform_values_model extends Testee_unit_test_case {
   }
 
 
+  public function test__install_extension_creates_database_table()
+  {
+    $hooks   = array('hook_a');
+    $version = '1.2.3';
+
+    $fields = array(
+      'fv_id' => array(
+        'auto_increment' => TRUE,
+        'constraint'     => 10,
+        'type'           => 'INT',
+        'unsigned'       => TRUE
+      ),
+      'timestamp' => array(
+        'constraint' => 10,
+        'type'       => 'INT',
+        'unsigned'   => TRUE
+      ),
+      'post_data' => array(
+        'type' => 'TEXT'
+      )
+    );
+
+    $this->EE->load->expectOnce('dbforge');
+    $this->EE->dbforge->expectOnce('add_field', array($fields));
+    $this->EE->dbforge->expectOnce('add_key', array('fv_id', TRUE));
+    $this->EE->dbforge->expectOnce('create_table', array('freeform_values_flashdata', TRUE));
+
+    $this->_subject->install_extension($version, $hooks);
+  }
+
+
   public function test__uninstall_extension__deletes_extension_from_database()
   {
     $this->EE->db->expectOnce('delete',
