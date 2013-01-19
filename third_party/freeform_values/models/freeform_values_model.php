@@ -6,7 +6,7 @@
  * @author          Stephen Lewis (http://github.com/experience/)
  * @copyright       Experience Internet
  * @package         Freeform_values
- * @version         0.1.0
+ * @version         0.2.0
  */
 
 class Freeform_values_model extends CI_Model {
@@ -54,7 +54,7 @@ class Freeform_values_model extends CI_Model {
     $this->_namespace = $namespace ? strtolower($namespace) : 'experience';
     $this->_package_name = $package_name ? $package_name : 'Freeform_values';
     $this->_package_title = $package_title ? $package_title : 'Freeform Values';
-    $this->_package_version = $package_version ? $package_version : '0.1.0';
+    $this->_package_version = $package_version ? $package_version : '0.2.0';
 
     // ExpressionEngine is very picky about capitalisation.
     $this->_sanitized_extension_class
