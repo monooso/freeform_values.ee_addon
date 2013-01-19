@@ -102,7 +102,7 @@ class Freeform_values_ext {
   )
   {
     $this->_model->delete_flashdata(
-      $this->EE->session->flashdata('freeform_values_flashdata_id'));
+      $this->_get_flashdata_value('freeform_values_flashdata_id'));
   }
 
 
@@ -123,7 +123,7 @@ class Freeform_values_ext {
 
     // Retrieve the previous POST data.
     $post_data = $this->_model->get_and_delete_flashdata(
-      $this->EE->session->flashdata('freeform_values_flashdata_id'));
+      $this->_get_flashdata_value('freeform_values_flashdata_id'));
 
     // Retrieve the field names. Every field has a label, so we look for that.
     $pattern = 'freeform:label:';
@@ -162,6 +162,17 @@ class Freeform_values_ext {
       $errors = $last_call;
     }
 
+    /**
+     * TRICKY:
+     * In theory, if there are no errors we don't need to save the flashdata, 
+     * because the form will be submitted successfully. In practise, we don't 
+     * know who else is meddling with this hook, potentially flagging validation 
+     * errors after we're done here.
+     *
+     * To be on the safe side, we record the POST data regardless of the error 
+     * count, and just tidy-up after ourselves when a record is inserted.
+     */
+
     $post_values = array();
 
     foreach ($_POST AS $key => $value)
@@ -195,6 +206,47 @@ class Freeform_values_ext {
   public function update_extension($installed_version = '')
   {
     return $this->_model->update_package($installed_version);
+  }
+
+
+
+  /* --------------------------------------------------------------
+   * PROTECTED METHODS
+   * ------------------------------------------------------------ */
+
+  /**
+   * Attempts to retrieve a value from the Session flashdata array with the 
+   * given key, taking into account the possible prefixes.
+   *
+   * @access  protected
+   * @param   string    $key    The key.
+   * @return  mixed
+   */
+  protected function _get_flashdata_value($key)
+  {
+    // Shortcut.
+    $fd = $this->EE->session->flashdata;
+
+    // First, check if the key exists as-is.
+    if (array_key_exists($key, $fd))
+    {
+      return $fd[$key];
+    }
+
+    // Next, check if the key has just been set, and has the prefix ':new:'.
+    if (array_key_exists(':new:' .$key, $fd))
+    {
+      return $fd[':new:' .$key];
+    }
+
+    // Finally, check if the key has the prefix ':old:'.
+    if (array_key_exists(':old:' .$key, $fd))
+    {
+      return $fd[':old:' .$key];
+    }
+
+    // Abandon all hope.
+    return FALSE;
   }
 
 
