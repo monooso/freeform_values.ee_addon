@@ -3,6 +3,7 @@
 ## Version 0.2.0 (2013-01-19)
 - Use database to store form 'flashdata'.
 - Write some decent unit tests.
+- Write documentation.
 
 ## Version 0.1.0 (2013-01-18)
 - Initial release.
