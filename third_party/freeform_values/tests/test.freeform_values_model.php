@@ -114,6 +114,30 @@ class Test_freeform_values_model extends Testee_unit_test_case {
    * EXTENSION TESTS
    * ------------------------------------------------------------ */
 
+  public function test__delete_flashdata__deletes_flashdata_from_database_and_returns_true()
+  {
+    $row_id = 123;
+
+    $this->EE->db->expectOnce('delete',
+      array('freeform_values_flashdata', array('fv_id' => $row_id)));
+
+    $this->assertIdentical(TRUE, $this->_subject->delete_flashdata($row_id));
+  }
+
+
+  public function test__delete_flashdata__does_nothing_and_returns_false_if_passed_an_invalid_row_id()
+  {
+    $this->EE->db->expectNever('delete');
+
+    $this->assertIdentical(FALSE, $this->_subject->delete_flashdata(NULL));
+    $this->assertIdentical(FALSE, $this->_subject->delete_flashdata(array()));
+    $this->assertIdentical(FALSE, $this->_subject->delete_flashdata(new StdClass));
+    $this->assertIdentical(FALSE, $this->_subject->delete_flashdata('Wibble'));
+    $this->assertIdentical(FALSE, $this->_subject->delete_flashdata(-123));
+    $this->assertIdentical(FALSE, $this->_subject->delete_flashdata(0));
+  }
+
+
   public function test__get_flashdata__retrieves_flashdata_from_the_database_given_a_valid_id()
   {
     $post_data = array(

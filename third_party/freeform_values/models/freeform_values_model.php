@@ -264,7 +264,13 @@ class Freeform_values_model extends CI_Model {
    */
   public function delete_flashdata($id)
   {
-    
+    if ( ! valid_int($id, 1))
+    {
+      return FALSE;
+    }
+
+    $this->EE->db->delete('freeform_values_flashdata', array('fv_id' => $id));
+    return TRUE;
   }
 
 
