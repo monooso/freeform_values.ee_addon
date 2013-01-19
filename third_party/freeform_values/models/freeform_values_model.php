@@ -343,6 +343,8 @@ class Freeform_values_model extends CI_Model {
       array('class' => $this->get_sanitized_extension_class()));
 
     // Drop the database table.
+    $this->EE->load->dbforge();
+    $this->EE->dbforge->drop_table('freeform_values_flashdata');
   }
 
 

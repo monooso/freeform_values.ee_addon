@@ -160,7 +160,7 @@ class Test_freeform_values_model extends Testee_unit_test_case {
   }
 
 
-  public function test__install_extension_creates_database_table()
+  public function test__install_extension__creates_flashdata_database_table()
   {
     $hooks   = array('hook_a');
     $version = '1.2.3';
@@ -195,6 +195,15 @@ class Test_freeform_values_model extends Testee_unit_test_case {
   {
     $this->EE->db->expectOnce('delete',
       array('extensions', array('class' => $this->_extension_class)));
+
+    $this->_subject->uninstall_extension();
+  }
+
+
+  public function test__uninstall_extension__drops_flashdata_database_table()
+  {
+    $this->EE->load->expectOnce('dbforge');
+    $this->EE->dbforge->expectOnce('drop_table', array('freeform_values_flashdata'));
 
     $this->_subject->uninstall_extension();
   }
