@@ -1,0 +1,9 @@
+# Requirements
+Freeform Values add-on has only been tested with:
+
+* PHP 5.3.10
+* ExpressionEngine 2.5.5
+* Freeform (free version) 4.0.10
+
+It _should_ work fine with PHP versions 5.3.0 and above, and any recent version
+of ExpressionEngine, but there are no guarantees. Proceed accordingly.

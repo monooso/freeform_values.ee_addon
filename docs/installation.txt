@@ -1,0 +1,16 @@
+# Installation Instructions
+
+## Installing
+1. Extract the ZIP file.
+2. Copy the `third_party/freeform_values` folder to your `/system/expressionengine/third_party/` directory.
+3. If you're installing Freeform Values for the first time, open the [Extensions Manager][extensions_manager] and enable the extension.
+
+## Upgrading
+To upgrade from version 0.1.0, do the following:
+
+1. Disable the extension.
+2. Extract the ZIP file.
+2. Replace the `/system/expressionengine/third_party/freeform_values` directory with the `third_party/freeform_values` folder.
+3. Enable the extension.
+
+[extensions_manager]: http://ellislab.com/expressionengine/user-guide/cp/add-ons/extension_manager.html "Documentation for the ExpressionEngine Extensions Manager"

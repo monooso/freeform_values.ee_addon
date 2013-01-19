@@ -55,6 +55,7 @@ class Test_freeform_values_ext extends Testee_unit_test_case {
   public function test__activate_extension__calls_model_install_method_with_correct_arguments()
   {
     $hooks = array(
+      'freeform_module_insert_end',
       'freeform_module_pre_form_parse',
       'freeform_module_validate_end'
     );
@@ -71,6 +72,130 @@ class Test_freeform_values_ext extends Testee_unit_test_case {
     $this->_model->expectOnce('uninstall_extension');
     $this->_subject->disable_extension();
   }
+
+
+  public function test__on_freeform_module_insert_end__deletes_flashdata_from_database()
+  {
+    $row_id = 123;
+
+    $this->EE->session->expectOnce('flashdata',
+      array('freeform_values_flashdata_id'));
+
+    $this->EE->session->returns('flashdata', $row_id);
+
+    $this->_model->expectOnce('delete_flashdata', array($row_id));
+  
+    $this->_subject->on_freeform_module_insert_end(array(), 1, 1, new StdClass);
+  }
+
+
+  public function test__on_freeform_module_pre_form_parse__retrieves_row_id_from_flashdata_and_post_data_from_database()
+  {
+    $row_id   = 123;
+    $freeform = (object) array('variables' => array());
+
+    $this->EE->session->expectOnce('flashdata',
+      array('freeform_values_flashdata_id'));
+
+    $this->EE->session->returns('flashdata', $row_id);
+
+    $this->_model->expectOnce('get_and_delete_flashdata', array($row_id));
+    $this->_model->returns('get_and_delete_flashdata', array());
+  
+    $this->_subject->on_freeform_module_pre_form_parse('tagdata', $freeform);
+  }
+
+
+  public function test__on_freeform_module_pre_form_parse__returns_tagdata()
+  {
+    $tagdata  = 'Lorem ipsum dolor';
+    $freeform = (object) array('variables' => array());
+
+    $this->EE->session->returns('flashdata', 1);
+    $this->_model->returns('get_and_delete_flashdata', array());
+  
+    $this->assertIdentical($tagdata,
+      $this->_subject->on_freeform_module_pre_form_parse($tagdata, $freeform));
+  }
+  
+
+
+  public function test__on_freeform_module_pre_form_parse__adds_value_properties_to_freeform_object()
+  {
+    $row_id    = 123;
+    $post_data = array('first_name' => 'Morgan', 'last_name' => 'Freeman');
+
+    // Retrieve the previously POSTed data.
+    $this->EE->session->returns('flashdata', $row_id);
+    $this->_model->returns('get_and_delete_flashdata', $post_data);
+
+    // Create the dummy Freeform class. The variables array will be altered 
+    // directly on this object.
+    $freeform = (object) array(
+      'variables' => array(
+        'freeform:label:first_name' => 'First Name',
+        'freeform:label:last_name'  => 'Last Name'
+      )
+    );
+  
+    $this->_subject->on_freeform_module_pre_form_parse('tagdata', $freeform);
+
+    $this->assertIdentical($freeform->variables['freeform:value:first_name'], 'Morgan');
+    $this->assertIdentical($freeform->variables['freeform:value:last_name'], 'Freeman');
+  }
+  
+
+
+  public function test__on_freeform_module_validate_end__saves_post_data()
+  {
+    $fv_post_data = array(
+      'fv_test_fn'    => 'Morgan',
+      'fv_test_ln'    => 'Freeman',
+      'fv_test_skill' => 'Making you read this in my voice.'
+    );
+
+    $row_id = 123;
+
+    /**
+     * TRICKY:
+     * The extension needs to store all the POST data, because it has no idea 
+     * what's important and what isn't at this stage. Testee uses POST data to 
+     * specify which tests should be run, so we can't just overwrite $_POST.
+     *
+     * The solution is to add the test POST data to the $_POST array, and then 
+     * make sure $this->EE->input->post returns the correct value for every 
+     * $_POST element, whether it belongs to this test, or to Testee.
+     */
+
+    $_POST = array_merge($_POST, $fv_post_data);
+
+    foreach ($_POST AS $key => $value)
+    {
+      $this->EE->input->returns('post', $value, array($key, TRUE));
+    }
+
+    $this->_model->expectOnce('save_flashdata', array($_POST));
+    $this->_model->returns('save_flashdata', $row_id);
+
+    $this->EE->session->expectOnce('set_flashdata',
+      array('freeform_values_flashdata_id', $row_id));
+
+    $errors   = array('EPIC FAIL!');
+    $freeform = new StdClass;
+
+    $this->_subject->on_freeform_module_validate_end($errors, $freeform);
+  }
+
+
+  public function test__on_freeform_module_validate_end__returns_errors_array()
+  {
+    $errors   = array('EPIC FAIL!');
+    $freeform = new StdClass;
+  
+    $this->assertIdentical($errors,
+      $this->_subject->on_freeform_module_validate_end($errors, $freeform));
+  }
+  
 
 
   public function test__update_extension__calls_model_update_method_with_correct_arguments_and_honors_return_value()
