@@ -65,6 +65,7 @@ class Freeform_values_ext {
   public function activate_extension()
   {
     $hooks = array(
+      'freeform_module_insert_end',
       'freeform_module_pre_form_parse',
       'freeform_module_validate_end'
     );
@@ -151,15 +152,12 @@ class Freeform_values_ext {
      * TRICKY:
      * If there are any problems, Freeform redirects us to an error page 
      * (usually the same as the form page). We keep track of the submitted form 
-     * data by adding it to the Session flashdata.
-     *
-     * The downside of this is that the Session flashdata array is really only 
-     * meant for small pieces of data. A more robust solution would be to save 
-     * this to the database, and then retrieve it, but I'm just hacking this 
-     * together for now.
+     * data by storing it in the database, and saving the row ID in the Session 
+     * flashdata.
      */
 
-    $this->EE->session->set_flashdata('freeform_values', $post_values);
+    $this->EE->session->set_flashdata('freeform_values_flashdata_id',
+      $this->_model->save_flashdata($post_values));
 
     // Don't forget to return the errors.
     return $errors;
