@@ -309,7 +309,7 @@ class Freeform_values_model extends CI_Model {
 
     $db_result = $this->EE->db
       ->select('post_data')
-      ->get_where(array('fv_id' => $id), 1);
+      ->get_where('freeform_values_flashdata', array('fv_id' => $id), 1);
 
     return ($db_row = $db_result->row_array())
       ? json_decode($db_row['post_data'], TRUE)

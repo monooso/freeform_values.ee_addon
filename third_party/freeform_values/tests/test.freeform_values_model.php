@@ -153,7 +153,7 @@ class Test_freeform_values_model extends Testee_unit_test_case {
     $this->EE->db->expectOnce('select', array('post_data'));
 
     $this->EE->db->expectOnce('get_where', array(
-      array('fv_id' => $row_id), 1));
+      'freeform_values_flashdata', array('fv_id' => $row_id), 1));
 
     $this->EE->db->returns('get_where', $db_result);
 
