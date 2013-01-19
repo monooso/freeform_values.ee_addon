@@ -42,6 +42,9 @@ class Freeform_values_model extends CI_Model {
 
     $this->EE =& get_instance();
 
+    // Load the number helper.
+    $this->EE->load->helper('EI_number_helper');
+
     // Load the OmniLogger class.
     if (file_exists(PATH_THIRD .'omnilog/classes/omnilogger.php'))
     {
@@ -251,7 +254,69 @@ class Freeform_values_model extends CI_Model {
   /* --------------------------------------------------------------
    * PUBLIC EXTENSION METHODS
    * ------------------------------------------------------------ */
-  
+
+  /**
+   * Deletes the 'flashdata' with the given ID.
+   *
+   * @access  public
+   * @param   int|string    $id     The row ID.
+   * @return  bool
+   */
+  public function delete_flashdata($id)
+  {
+    if ( ! valid_int($id, 1))
+    {
+      return FALSE;
+    }
+
+    $this->EE->db->delete('freeform_values_flashdata', array('fv_id' => $id));
+    return TRUE;
+  }
+
+
+  /**
+   * Convenience method to retrieve the 'flashdata' with the given ID, and 
+   * delete the row.
+   *
+   * @access  public
+   * @param   int|string    $id     The row ID.
+   * @return  array
+   */
+  public function get_and_delete_flashdata($id)
+  {
+    $data = $this->get_flashdata($id);
+
+    $this->delete_flashdata($id);
+
+    return $data;
+  }
+
+
+  /**
+   * Retrieves the 'flashdata' with the given ID. Currently makes no distinction 
+   * between a non-existent row and empty post data.
+   *
+   * @access  public
+   * @param   int|string    $id     The row ID.
+   * @return  array
+   */
+  public function get_flashdata($id)
+  {
+    if ( ! valid_int($id, 1))
+    {
+      return array();
+    }
+
+    $db_result = $this->EE->db
+      ->select('post_data')
+      ->get_where('freeform_values_flashdata', array('fv_id' => $id), 1);
+
+    return ($db_row = $db_result->row_array())
+      ? json_decode($db_row['post_data'], TRUE)
+      : array();
+  }
+
+
   /**
    * Returns the correctly-capitalised 'extension' class.
    *
@@ -292,6 +357,7 @@ class Freeform_values_model extends CI_Model {
       'version'   => $version
     );
 
+    // Register the hooks.
     foreach ($hooks AS $hook)
     {
       if ( ! is_string($hook) OR $hook == '')
@@ -302,6 +368,54 @@ class Freeform_values_model extends CI_Model {
       $this->EE->db->insert('extensions', array_merge(
         $default_hook_data, array('hook' => $hook, 'method' => 'on_' .$hook)));
     }
+
+    // Create the database table.
+    $this->EE->load->dbforge();
+
+    $fields = array(
+      'fv_id' => array(
+        'auto_increment' => TRUE,
+        'constraint'     => 10,
+        'type'           => 'INT',
+        'unsigned'       => TRUE
+      ),
+      'timestamp' => array(
+        'constraint' => 10,
+        'type'       => 'INT',
+        'unsigned'   => TRUE
+      ),
+      'post_data' => array(
+        'type' => 'TEXT'
+      )
+    );
+
+    $this->EE->dbforge->add_field($fields);
+    $this->EE->dbforge->add_key('fv_id', TRUE);
+    $this->EE->dbforge->create_table('freeform_values_flashdata', TRUE);
+  }
+
+
+  /**
+   * Saves the given 'flashdata' to the database, and returns the row ID.
+   *
+   * @access  public
+   * @param   array   $data  The 'flashdata'.
+   * @return  int
+   */
+  public function save_flashdata(Array $data)
+  {
+    $insert_data = array(
+      'timestamp' => time(),
+      'post_data' => json_encode($data)
+    );
+
+    /**
+     * We assume the insert works. Not the end of the world if it doesn't, and 
+     * we have no fallback position anyway.
+     */
+
+    $this->EE->db->insert('freeform_values_flashdata', $insert_data);
+    return $this->EE->db->insert_id();
   }
 
 
@@ -313,14 +427,14 @@ class Freeform_values_model extends CI_Model {
    */
   public function uninstall_extension()
   {
+    // Delete the hooks.
     $this->EE->db->delete('extensions',
       array('class' => $this->get_sanitized_extension_class()));
-  }
 
-  
-  /* --------------------------------------------------------------
-   * PUBLIC ADD-ON SPECIFIC METHODS
-   * ------------------------------------------------------------ */
+    // Drop the database table.
+    $this->EE->load->dbforge();
+    $this->EE->dbforge->drop_table('freeform_values_flashdata');
+  }
 
 
 

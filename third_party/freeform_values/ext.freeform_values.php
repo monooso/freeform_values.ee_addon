@@ -65,6 +65,7 @@ class Freeform_values_ext {
   public function activate_extension()
   {
     $hooks = array(
+      'freeform_module_insert_end',
       'freeform_module_pre_form_parse',
       'freeform_module_validate_end'
     );
@@ -86,6 +87,26 @@ class Freeform_values_ext {
 
 
   /**
+   * Handles the freeform_module_insert_end extension hook. Deletes the 
+   * 'flashdata' row from the database, as it's no longer required.
+   *
+   * @access  public
+   * @param   array   $field_data   The field data.
+   * @param   int     $entry_id     The entry ID.
+   * @param   int     $form_id      The form ID.
+   * @param   object  $freeform     The Freeform instance.
+   * @return  void
+   */
+  public function on_freeform_module_insert_end(Array $field_data, $entry_id,
+    $form_id, $freeform
+  )
+  {
+    $this->_model->delete_flashdata(
+      $this->_get_flashdata_value('freeform_values_flashdata_id'));
+  }
+
+
+  /**
    * Handles the freeform_module_pre_form_parse extension hook.
    *
    * @access  public
@@ -93,15 +114,16 @@ class Freeform_values_ext {
    * @param   object  $freeform   The Freeform instance.
    * @return  string
    */
-  public function on_freeform_module_pre_form_parse($tagdata, &$freeform)
+  public function on_freeform_module_pre_form_parse($tagdata, $freeform)
   {
     if (($last_call = $this->EE->extensions->last_call) !== FALSE)
     {
       $tagdata = $last_call;
     }
 
-    // Retrieve the form values from the flashdata.
-    $post_values = $this->EE->session->flashdata('freeform_values') ?: array();
+    // Retrieve the previous POST data.
+    $post_data = $this->_model->get_and_delete_flashdata(
+      $this->_get_flashdata_value('freeform_values_flashdata_id'));
 
     // Retrieve the field names. Every field has a label, so we look for that.
     $pattern = 'freeform:label:';
@@ -117,8 +139,8 @@ class Freeform_values_ext {
       $field_name = substr($key, $pattern_length);
 
       $freeform->variables['freeform:value:' .$field_name]
-        = array_key_exists($field_name, $post_values)
-          ? $post_values[$field_name] : '';
+        = array_key_exists($field_name, $post_data)
+          ? $post_data[$field_name] : '';
     }
 
     return $tagdata;
@@ -140,6 +162,17 @@ class Freeform_values_ext {
       $errors = $last_call;
     }
 
+    /**
+     * TRICKY:
+     * In theory, if there are no errors we don't need to save the flashdata, 
+     * because the form will be submitted successfully. In practise, we don't 
+     * know who else is meddling with this hook, potentially flagging validation 
+     * errors after we're done here.
+     *
+     * To be on the safe side, we record the POST data regardless of the error 
+     * count, and just tidy-up after ourselves when a record is inserted.
+     */
+
     $post_values = array();
 
     foreach ($_POST AS $key => $value)
@@ -151,15 +184,12 @@ class Freeform_values_ext {
      * TRICKY:
      * If there are any problems, Freeform redirects us to an error page 
      * (usually the same as the form page). We keep track of the submitted form 
-     * data by adding it to the Session flashdata.
-     *
-     * The downside of this is that the Session flashdata array is really only 
-     * meant for small pieces of data. A more robust solution would be to save 
-     * this to the database, and then retrieve it, but I'm just hacking this 
-     * together for now.
+     * data by storing it in the database, and saving the row ID in the Session 
+     * flashdata.
      */
 
-    $this->EE->session->set_flashdata('freeform_values', $post_values);
+    $this->EE->session->set_flashdata('freeform_values_flashdata_id',
+      $this->_model->save_flashdata($post_values));
 
     // Don't forget to return the errors.
     return $errors;
@@ -176,6 +206,47 @@ class Freeform_values_ext {
   public function update_extension($installed_version = '')
   {
     return $this->_model->update_package($installed_version);
+  }
+
+
+
+  /* --------------------------------------------------------------
+   * PROTECTED METHODS
+   * ------------------------------------------------------------ */
+
+  /**
+   * Attempts to retrieve a value from the Session flashdata array with the 
+   * given key, taking into account the possible prefixes.
+   *
+   * @access  protected
+   * @param   string    $key    The key.
+   * @return  mixed
+   */
+  protected function _get_flashdata_value($key)
+  {
+    // Shortcut.
+    $fd = $this->EE->session->flashdata;
+
+    // First, check if the key exists as-is.
+    if (array_key_exists($key, $fd))
+    {
+      return $fd[$key];
+    }
+
+    // Next, check if the key has just been set, and has the prefix ':new:'.
+    if (array_key_exists(':new:' .$key, $fd))
+    {
+      return $fd[':new:' .$key];
+    }
+
+    // Finally, check if the key has the prefix ':old:'.
+    if (array_key_exists(':old:' .$key, $fd))
+    {
+      return $fd[':old:' .$key];
+    }
+
+    // Abandon all hope.
+    return FALSE;
   }
 
 
