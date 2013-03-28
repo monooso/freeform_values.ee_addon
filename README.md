@@ -1,4 +1,12 @@
-# Freeform Values
+## An Important Note About Support
+
+Freeform Values (in common with all of my ExpressionEngine add-ons) is no longer officially supported.
+
+This README contains basic usage instructions. Feel free to fork the repo if you'd like to make some changes or improvements (it's distributed under a liberal open source license).
+
+Hopefully this will be everything you need to use this add-on in your projects, but if not please don't email me asking for support; I don't even have ExpressionEngine installed locally any more.
+
+## Overview
 By default, if you want Freeform to preserve your field values after an error, you must use the `{freeform:field:FIELD_NAME}` tag, which outputs the complete HTML tag for your form field.
 
 This is all well and good, until you want to add something other than a text field or textarea to your form. At that point, you either forego the simple ambition of preserving the previously-submitted form values, or you shell out $99.95 for [Freeform Pro][ff_pro] (and excellent product in many ways, but not if all you want is a checkbox, for example).
